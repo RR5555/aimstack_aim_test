@@ -1,0 +1,13 @@
+
+
+
+FROM python:3.14-slim
+
+# ----- USER -----
+ARG DOCKER_USER=blissfox
+ARG DOCKER_USER_ID=1000
+ARG DOCKER_USER_GID=1000
+
+RUN addgroup --gid $DOCKER_USER_GID $DOCKER_USER && adduser --uid $DOCKER_USER_ID $DOCKER_USER -gid $DOCKER_USER_GID
+USER $DOCKER_USER
+
