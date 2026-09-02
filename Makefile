@@ -7,6 +7,8 @@ define fn_prompt_cmd
 @ read -e -p " " -i "$(1)"  CMDtoEXECUTE; $$CMDtoEXECUTE
 endef
 
+bats-tests: ## Launch tests
+	bats ./tests
 
 
 
