@@ -68,10 +68,10 @@ setup() {
 		TMP_TAG=tmp.docker_image_exists
 	fi
 
-	# test is_dockerfile_older
-	if [[ "${BATS_TEST_NAME}" == "test_test_is-2d5fdockerfile-2d5folder" ]]; then
+	# test is_dockerfile_newer
+	if [[ "${BATS_TEST_NAME}" == "test_test_is-2d5fdockerfile-2d5fnewer" ]]; then
 		# echo "# --- Name okay ---" >&3
-		TMP_TAG=tmp.is_dockerfile_older
+		TMP_TAG=tmp.is_dockerfile_newer
 		TMP_DIR=$(mktemp -d)
 	fi
 
@@ -96,8 +96,8 @@ teardown() {
 		teardown_docker_image "$TMP_TAG"
     fi
 
-	# test docker_image_exists
-    if [[ "${BATS_TEST_NAME}" == "test_test_is-2d5fdockerfile-2d5folder" ]]; then
+	# test is_dockerfile_newer
+    if [[ "${BATS_TEST_NAME}" == "test_test_is-2d5fdockerfile-2d5fnewer" ]]; then
 		# echo "# --- Name okay ---" >&3
 		rm -rf "$TMP_DIR"
 		teardown_docker_image "$TMP_TAG"
@@ -153,22 +153,20 @@ teardown_file() {
 }
 
 
-@test "test is_dockerfile_older" {
+@test "test is_dockerfile_newer" {
 	echo -e "\nFROM python:3.14-slim\n\nCMD [\"echo\", \"before\"]\n" > "$TMP_DIR/Dockerfile"
 	echo "# --- Dockerfile Created ---" >&3
-	sleep 1
 	run docker_build "$TMP_TAG" "$TMP_DIR/Dockerfile"
 	echo "# --- Image Created ---" >&3
-	run is_dockerfile_older "$TMP_TAG" "$TMP_DIR/Dockerfile"
-	# echo "# --- Status: $status ---" >&3
-	# echo -e "# ---\n$output\n---" >&3
-	assert_success
-	sleep 1
-	echo -e "\nFROM python:3.14-slim\n\nCMD [\"echo\", \"after\"]\n" > "$TMP_DIR/Dockerfile"
-	run is_dockerfile_older "$TMP_TAG" "$TMP_DIR/Dockerfile"
+	run is_dockerfile_newer "$TMP_TAG" "$TMP_DIR/Dockerfile"
 	# echo "# --- Status: $status ---" >&3
 	# echo -e "# ---\n$output\n---" >&3
 	assert_failure
+	echo -e "\nFROM python:3.14-slim\n\nCMD [\"echo\", \"after\"]\n" > "$TMP_DIR/Dockerfile"
+	run is_dockerfile_newer "$TMP_TAG" "$TMP_DIR/Dockerfile"
+	# echo "# --- Status: $status ---" >&3
+	# echo -e "# ---\n$output\n---" >&3
+	assert_success
 }
 
 
