@@ -67,8 +67,3 @@ function conditional_docker_build () {
 
 
 
-
-function test_echo () {
-    echo "Hello $1";
-}
-

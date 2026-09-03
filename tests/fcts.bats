@@ -170,10 +170,6 @@ teardown_file() {
 }
 
 
-function mock_docker_build () {
-	:
-}
-
 @test "test conditional_docker_build" {
 	:
 	echo -e "\nFROM python:3.14-slim\n\nCMD [\"echo\", \"before\"]\n" > "$TMP_DIR/Dockerfile"
