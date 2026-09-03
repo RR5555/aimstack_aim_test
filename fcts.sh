@@ -50,16 +50,18 @@ function is_dockerfile_newer () {
 
 # conditional_docker_build <tag_name> <Dockerfile_path> <docker_build_fn>
 function conditional_docker_build () {
-    if [ $# != 3 ]; then \
-        echo "Error"; \
+    if [ $# != 3 ]; then
+        echo "Error";
     fi
-	if ! docker image inspect "$1" >/dev/null 2>&1; then \
-		echo "[NotExist] Build"; \
-		$3 ; \
+
+	if ! docker_image_exists "$1"; then
+		echo "[NotExist] Build";
+		$3 "$1" "$2";
     fi
-	if [ "$(stat -c '%Y' "$2")" -gt "$(docker image inspect "$1" --format='{{.Created}}' | xargs -I {} date --date {} +'%s')" ]; then \
-		echo "[OldBuild] Build"; \
-		$3 ; \
+	
+	if is_dockerfile_newer "$1" "$2"; then
+		echo "[OldBuild] Build";
+		$3 "$1" "$2";
     fi
 }
 
