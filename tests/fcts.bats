@@ -176,29 +176,45 @@ function mock_docker_build () {
 
 @test "test conditional_docker_build" {
 	:
-	# echo -e "\nFROM python:3.14-slim\n\nCMD [\"echo\", \"before\"]\n" > "$TMP_DIR/Dockerfile"
-	# echo "# --- Dockerfile Created ---" >&3
-    # run conditional_docker_build "$TMP_TAG" "$TMP_DIR/Dockerfile" mock_docker_build
-	# refute_output --partial "Error"
-	# assert_output --partial "\[NotExist\] Build"
-	# refute_output --partial "\[OldBuild\] Build"
-	# echo "# --- Image Created ---" >&3
+	echo -e "\nFROM python:3.14-slim\n\nCMD [\"echo\", \"before\"]\n" > "$TMP_DIR/Dockerfile"
+	echo "# --- Dockerfile Created ---" >&3
+    run conditional_docker_build "$TMP_TAG" "$TMP_DIR/Dockerfile" docker_build
+	refute_output --partial "Error"
+	assert_output --partial "[NotExist] Build"
+	refute_output --partial "[OldBuild] Build"
+	echo "# --- Image Created ---" >&3
 	
+	run docker run --rm --name tmp.docker_container "$TMP_TAG"
+	assert_output "before"
+	echo "# --- Container Run (before) ---" >&3
+
+	echo -e "\nFROM python:3.14-slim\n\nCMD [\"echo\", \"after\"]\n" > "$TMP_DIR/Dockerfile"
+	echo "# --- Dockerfile Modified ---" >&3
+
+	run conditional_docker_build "$TMP_TAG" "$TMP_DIR/Dockerfile" docker_build
+	refute_output --partial "Error"
+	refute_output --partial "[NotExist] Build"
+	assert_output --partial "[OldBuild] Build"
+	echo "# --- Image Created ---" >&3
 	
-	# if [ "$(docker run --rm --name tmp.docker_container "$TMP_TAG")" != "before" ]; then \
-	# 	echo -e "\033[0;31mTEST FAIL\033[0m"; \
-	# 	exit 1; \
-	# fi
-	# echo "--- Container Run (before) ---"
-	# echo -e "\nFROM python:3.14-slim\n\nCMD [\"echo\", \"after\"]\n" > ./tests/tmp/Dockerfile
-	# echo "--- Dockerfile Created ---"
-	# conditional_docker_build "$TMP_TAG" ./tests/tmp/Dockerfile mock_docker_build
-	# echo "--- Image Created ---"
-	# if [ "$(docker run --rm --name tmp.docker_container "$TMP_TAG"" != "after" ]; then \
-	# 	echo -e "\033[0;31mTEST FAIL\033[0m"; \
-	# 	exit 1; \
-	# fi
-	# echo "--- Container Run (after) ---"
-	# conditional_docker_build tmp.docker_build ./tests/tmp/Dockerfile mock_docker_build
-	# echo "--- Already built & up-to-date ---"
+	run docker run --rm --name tmp.docker_container "$TMP_TAG"
+	assert_output "after"
+	echo "# --- Container Run (after) ---" >&3
+
+
+	run conditional_docker_build "$TMP_TAG" "$TMP_DIR/Dockerfile" docker_build
+	refute_output --partial "Error"
+	refute_output --partial "[NotExist] Build"
+	refute_output --partial "[OldBuild] Build"
+	echo "# --- Already built & up-to-date ---" >&3
+
+	run conditional_docker_build "$TMP_TAG" "$TMP_DIR/Dockerfile"
+	assert_output --partial "Error"
+	refute_output --partial "[NotExist] Build"
+	refute_output --partial "[OldBuild] Build"
+	echo "# --- Should be 3 arguments ---" >&3
 }
+
+
+
+
