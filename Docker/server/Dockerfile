@@ -31,6 +31,7 @@ RUN pip install Cython
 RUN pip install aim
 RUN pip install supervisor
 # RUN pip install supervisor supervisor-stdout
+# `supervisor-stdout` on Pypi is behind master branch which corrects support for python3
 RUN pip install git+https://github.com/coderanger/supervisor-stdout.git@973ba19967cdaf46d9c1634d1675fc65b9574f6e
 
 ENV PATH="${PATH}:/home/$DOCKER_USER/.local/bin"
