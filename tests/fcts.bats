@@ -175,12 +175,14 @@ teardown_file() {
 	echo -e "\nFROM python:3.14-slim\n\nCMD [\"echo\", \"before\"]\n" > "$TMP_DIR/Dockerfile"
 	echo "# --- Dockerfile Created ---" >&3
     run conditional_docker_build "$TMP_TAG" "$TMP_DIR/Dockerfile" docker_build
+	assert_success
 	refute_output --partial "Error"
 	assert_output --partial "[NotExist] Build"
 	refute_output --partial "[OldBuild] Build"
 	echo "# --- Image Created ---" >&3
 	
 	run docker run --rm --name tmp.docker_container "$TMP_TAG"
+	assert_success
 	assert_output "before"
 	echo "# --- Container Run (before) ---" >&3
 
@@ -188,23 +190,27 @@ teardown_file() {
 	echo "# --- Dockerfile Modified ---" >&3
 
 	run conditional_docker_build "$TMP_TAG" "$TMP_DIR/Dockerfile" docker_build
+	assert_success
 	refute_output --partial "Error"
 	refute_output --partial "[NotExist] Build"
 	assert_output --partial "[OldBuild] Build"
 	echo "# --- Image Created ---" >&3
 	
 	run docker run --rm --name tmp.docker_container "$TMP_TAG"
+	assert_success
 	assert_output "after"
 	echo "# --- Container Run (after) ---" >&3
 
 
 	run conditional_docker_build "$TMP_TAG" "$TMP_DIR/Dockerfile" docker_build
+	assert_success
 	refute_output --partial "Error"
 	refute_output --partial "[NotExist] Build"
 	refute_output --partial "[OldBuild] Build"
 	echo "# --- Already built & up-to-date ---" >&3
 
 	run conditional_docker_build "$TMP_TAG" "$TMP_DIR/Dockerfile"
+	assert_failure
 	assert_output --partial "Error"
 	refute_output --partial "[NotExist] Build"
 	refute_output --partial "[OldBuild] Build"
