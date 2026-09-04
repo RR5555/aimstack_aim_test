@@ -8,5 +8,6 @@ def test_aim_run():
 
 
 def test_aim_run_fail():
-    aim_run_fail()
+    with pytest.raises(Exception):
+        aim_run_fail()
 # Capture the failure mode

@@ -11,53 +11,26 @@ bats-tests: ## Launch tests
 	bats ./tests
 
 
-
-scp-files: ## Copy files to ssh target [req: SSH_TARGET]
-	@ echo -e "Please define SSH_TARGET & TARGET_DIR";\
-	prompt_cmd("scp -r . SSH_TARGET:TARGET_DIR");
-
-
-
 docker-worker-build: ## [Host] Build aim worker image & tag it
-	$(call docker_build, aim_test_worker, ./Docker/worker/Dockerfile)
-# docker build -t aim_test_worker -f ./Docker/worker/Dockerfile --build-arg DOCKER_USER=$$(id -un) --build-arg DOCKER_USER_ID=$$(id -u) --build-arg DOCKER_USER_GID=$$(id -g) .
+	. ./fcts.sh && docker_build aim_test_worker ./Docker/worker/Dockerfile
 
 docker-server-build: ## [Host] Build aim server image & tag it
-	$(call docker_build, aim_server, ./Docker/server/Dockerfile)
-# docker build -t aim_server -f ./Docker/server/Dockerfile --build-arg DOCKER_USER=$$(id -un) --build-arg DOCKER_USER_ID=$$(id -u) --build-arg DOCKER_USER_GID=$$(id -g) .
+	. ./fcts.sh && docker_build aim_server ./Docker/server/Dockerfile
 
-aim-up-integrated: ## [Host]
-	@echo "### aim_server ###"
-	$(call fn_conditional_docker_build, <tag_name>, <Dockerfile_path>, <docker_build_make_target>)
-	@if ! docker image inspect aim_server >/dev/null 2>&1; then \
-		echo "[NotExist] Build"; \
-		$(MAKE) docker-server-build; \
-    fi
-	@if [ $$(stat -c '%Y' ./Docker/server/Dockerfile) -gt $$(docker image inspect aim_server --format='{{.Created}}' | xargs -I {} date --date {} +'%s') ]; then \
-		echo "[OldBuild] Build"; \
-		$(MAKE) docker-server-build; \
-    fi
-	@echo "### aim_test_worker ###"
-	@if ! docker image inspect aim_test_worker >/dev/null 2>&1; then \
-		echo "[NotExist] Build"; \
-		$(MAKE) docker-worker-build; \
-    fi
-	@if [ $$(stat -c '%Y' ./Docker/worker/Dockerfile) -gt $$(docker image inspect aim_test_worker --format='{{.Created}}' | xargs -I {} date --date {} +'%s') ]; then \
-		echo "[OldBuild] Build"; \
-		$(MAKE) docker-worker-build; \
-    fi
-	@echo "### Docker Compose ###"
-	@DOCKER_USER=$$(id -un) \
-    DOCKER_USER_ID=$$(id -u) \
-    DOCKER_USER_GID=$$(id -g) \
-	docker compose up
-	@echo "Head to "
+
 
 aim-up: ## [Host] Aim Docker Compose up
-	DOCKER_USER=$$(id -un) \
-    DOCKER_USER_ID=$$(id -u) \
-    DOCKER_USER_GID=$$(id -g) \
-	docker compose up
+	@echo "### aim_server ###"
+	. ./fcts.sh && conditional_docker_build aim_server ./Docker/server/Dockerfile docker_build
+	
+	@echo "### aim_test_worker ###"
+	. ./fcts.sh && conditional_docker_build aim_test_worker ./Docker/worker/Dockerfile docker_build
+
+	@echo "### Docker Compose ###"
+	@docker compose -f ./Docker/docker-compose.yaml up --detach
+	@echo "Head to http://127.0.0.1:43800"
+	@echo -e "Explore container logs:\ndocker compose -p aim_test logs"
+
 
 aim-up-build: ## [Host] Aim Docker Compose up with forced docker img build
 	DOCKER_USER=$$(id -un) \
@@ -65,13 +38,9 @@ aim-up-build: ## [Host] Aim Docker Compose up with forced docker img build
     DOCKER_USER_GID=$$(id -g) \
 	docker compose up --build
 
-# Note that if Dockerfile is modified, you might to force the build with `--build`
-
 
 aim-down: ## [Host] Aim Docker Compose down
 	docker compose -p aim_test down
-
-
 
 
 
