@@ -52,6 +52,7 @@ function is_dockerfile_newer () {
 function conditional_docker_build () {
     if [ $# != 3 ]; then
         echo "Error";
+		exit 1;
     fi
 
 	if ! docker_image_exists "$1"; then
