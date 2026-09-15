@@ -21,10 +21,10 @@ docker-server-build: ## [Host] Build aim server image & tag it
 
 aim-up: ## [Host] Aim Docker Compose up
 	@echo "### aim_server ###"
-	. ./fcts.sh && conditional_docker_build aim_server ./Docker/server/Dockerfile docker_build
+	. ./fcts.sh && extended_conditional_docker_build aim_server ./Docker/server/Dockerfile docker_build ./supervisord.conf
 	
 	@echo "### aim_test_worker ###"
-	. ./fcts.sh && conditional_docker_build aim_test_worker ./Docker/worker/Dockerfile docker_build
+	. ./fcts.sh && extended_conditional_docker_build aim_test_worker ./Docker/worker/Dockerfile docker_build ./Docker/worker/aim_runs.py ./Docker/worker/test_aim_runs.py
 
 	@echo "### Docker Compose ###"
 	@docker compose -f ./Docker/docker-compose.yaml up --detach
@@ -32,11 +32,11 @@ aim-up: ## [Host] Aim Docker Compose up
 	@echo -e "Explore container logs:\ndocker compose -p aim_test logs"
 
 
-aim-up-build: ## [Host] Aim Docker Compose up with forced docker img build
-	DOCKER_USER=$$(id -un) \
-    DOCKER_USER_ID=$$(id -u) \
-    DOCKER_USER_GID=$$(id -g) \
-	docker compose up --build
+# aim-up-build: ## [Host] Aim Docker Compose up with forced docker img build
+# 	DOCKER_USER=$$(id -un) \
+#     DOCKER_USER_ID=$$(id -u) \
+#     DOCKER_USER_GID=$$(id -g) \
+# 	docker compose up --build
 
 
 aim-down: ## [Host] Aim Docker Compose down

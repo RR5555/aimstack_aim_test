@@ -47,6 +47,21 @@ function is_dockerfile_newer () {
 	[[ "$(stat -c '%y' "$2" | xargs -I {} date --date {} "+%s.%N")" > "$(docker image inspect "$1" --format='{{.Metadata.LastTagTime.Unix}}.{{.Metadata.LastTagTime.Nanosecond}}')" ]]
 }
 
+# are_files_newer_than_img <tag_name> <file_names_array>
+function are_files_newer_than_img () {
+	# echo "${@:2}"
+	for _file in "${@:2}"; do
+		if [ ! -f "$_file" ]; then
+			echo -e "\nError: file '$_file' does not exist or is not a regular file" >&2
+			exit 1
+		fi
+		if [[ "$(stat -c '%y' "$_file" | xargs -I {} date --date {} "+%s.%N")" > "$(docker image inspect "$1" --format='{{.Metadata.LastTagTime.Unix}}.{{.Metadata.LastTagTime.Nanosecond}}')" ]]; then
+			echo -n "$_file "
+		fi
+	done
+	echo
+}
+
 
 # conditional_docker_build <tag_name> <Dockerfile_path> <docker_build_fn>
 function conditional_docker_build () {
@@ -66,5 +81,27 @@ function conditional_docker_build () {
     fi
 }
 
+
+
+# extended_conditional_docker_build <tag_name> <Dockerfile_path> <docker_build_fn> <dependency_file_names_array>
+function extended_conditional_docker_build () {
+    if [ $# -lt 3 ]; then
+        echo "Error: Number of args ($#) should be greater or equal to 3";
+		exit 1;
+    fi
+	dependency_files=( "${@:4}" )
+	dependency_files+=( "$2" )
+
+	if ! docker_image_exists "$1"; then
+		echo "[NotExist] Build";
+		$3 "$1" "$2";
+    fi
+	
+	old_build=$(are_files_newer_than_img "$1" "${dependency_files[@]}")
+	if [ ! "$old_build" = "" ]; then
+		echo "[OldBuild] Build (old: $old_build)";
+		$3 "$1" "$2";
+    fi
+}
 
 
