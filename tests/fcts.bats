@@ -82,6 +82,23 @@ setup() {
 		TMP_DIR=$(mktemp -d)
 	fi
 	echo "# --- Setup done ---" >&3
+
+	# test are_files_newer_than_img
+	if [[ "${BATS_TEST_NAME}" == "test_test_are-2d5ffiles-2d5fnewer-2d5fthan-2d5fimg" ]]; then
+		# echo "# --- Name okay ---" >&3
+		TMP_TAG=tmp.are_files_newer_than_img
+		TMP_DIR=$(mktemp -d)
+	fi
+
+	# test extended_conditional_docker_build
+	if [[ "${BATS_TEST_NAME}" == "test_test_extended-2d5fconditional-2d5fdocker-2d5fbuild" ]]; then
+		# echo "# --- Name okay ---" >&3
+		TMP_TAG=tmp.extended_conditional_docker_build
+		TMP_DIR=$(mktemp -d)
+	fi
+
+
+	echo "# --- Setup done ---" >&3
 }
 
 # shellcheck disable=2329
@@ -110,6 +127,21 @@ teardown() {
 		rm -rf "$TMP_DIR"
 		teardown_docker_image "$TMP_TAG"
 	fi
+	
+	# test are_files_newer_than_img
+	if [[ "${BATS_TEST_NAME}" == "test_test_are-2d5ffiles-2d5fnewer-2d5fthan-2d5fimg" ]]; then
+		# echo "# --- Name okay ---" >&3
+		rm -rf "$TMP_DIR"
+		teardown_docker_image "$TMP_TAG"
+	fi
+
+	# test extended_conditional_docker_build
+	if [[ "${BATS_TEST_NAME}" == "test_test_extended-2d5fconditional-2d5fdocker-2d5fbuild" ]]; then
+		# echo "# --- Name okay ---" >&3
+		rm -rf "$TMP_DIR"
+		teardown_docker_image "$TMP_TAG"
+	fi
+
 	echo "# --- Teardown done ---" >&3
 }
 
@@ -171,7 +203,6 @@ teardown_file() {
 
 
 @test "test conditional_docker_build" {
-	:
 	echo -e "\nFROM python:3.14-slim\n\nCMD [\"echo\", \"before\"]\n" > "$TMP_DIR/Dockerfile"
 	echo "# --- Dockerfile Created ---" >&3
     run conditional_docker_build "$TMP_TAG" "$TMP_DIR/Dockerfile" docker_build
@@ -218,5 +249,106 @@ teardown_file() {
 }
 
 
+@test "test are_files_newer_than_img" {
+	test_files=( "$TMP_DIR/test.txt" "$TMP_DIR/re-test.txt" "$TMP_DIR/Dockerfile")
+	for _file in "${test_files[@]}"; do
+		echo "TEST" > "$_file"
+	done
+	echo "# --- Tmp dependency files created ---" >&3
+
+	echo -e "\nFROM python:3.14-slim\n\nCMD [\"echo\", \"before\"]\n" > "$TMP_DIR/Dockerfile"
+	run docker_build "$TMP_TAG" "$TMP_DIR/Dockerfile"
+	echo "# --- Docker img built ---" >&3
 
 
+	run are_files_newer_than_img "$TMP_TAG" "${test_files[@]}"
+	assert_success
+	assert_output ""
+
+	echo "NEW" > "$TMP_DIR/test.txt"
+	run are_files_newer_than_img "$TMP_TAG" "${test_files[@]}"
+	assert_success
+	assert_output "$TMP_DIR/test.txt "
+
+	echo "RE-NEW" > "$TMP_DIR/re-test.txt"
+	run are_files_newer_than_img "$TMP_TAG" "${test_files[@]}"
+	assert_success
+	assert_output "$TMP_DIR/test.txt $TMP_DIR/re-test.txt "
+
+	test_files+=("not_existing")
+	echo "${test_files[@]}" >&3
+	run are_files_newer_than_img "$TMP_TAG" "${test_files[@]}"
+	# assert_success
+	assert_failure
+	# echo "$output" >&3
+}
+
+## bats test_tags=bats:focus
+@test "test extended_conditional_docker_build" {
+	echo -e "\nFROM python:3.14-slim\n\nCMD [\"echo\", \"before\"]\n" > "$TMP_DIR/Dockerfile"
+	echo "# --- Dockerfile Created ---" >&3
+    run extended_conditional_docker_build "$TMP_TAG" "$TMP_DIR/Dockerfile" docker_build
+	assert_success
+	refute_output --partial "Error"
+	assert_output --partial "[NotExist] Build"
+	refute_output --partial "[OldBuild] Build"
+	echo "# --- Image Created ---" >&3
+	
+	run docker run --rm --name tmp.docker_container "$TMP_TAG"
+	assert_success
+	assert_output "before"
+	echo "# --- Container Run (before) ---" >&3
+
+	echo -e "\nFROM python:3.14-slim\n\nCMD [\"echo\", \"after\"]\n" > "$TMP_DIR/Dockerfile"
+	echo "# --- Dockerfile Modified ---" >&3
+
+	run extended_conditional_docker_build "$TMP_TAG" "$TMP_DIR/Dockerfile" docker_build
+	assert_success
+	refute_output --partial "Error"
+	refute_output --partial "[NotExist] Build"
+	assert_output --partial "[OldBuild] Build (old: $TMP_DIR/Dockerfile )"
+	echo "# --- Image Created ---" >&3
+	
+	run docker run --rm --name tmp.docker_container "$TMP_TAG"
+	assert_success
+	assert_output "after"
+	echo "# --- Container Run (after) ---" >&3
+
+
+	run extended_conditional_docker_build "$TMP_TAG" "$TMP_DIR/Dockerfile" docker_build
+	assert_success
+	refute_output --partial "Error"
+	refute_output --partial "[NotExist] Build"
+	refute_output --partial "[OldBuild] Build"
+	echo "# --- Already built & up-to-date ---" >&3
+
+	run extended_conditional_docker_build "$TMP_TAG" "$TMP_DIR/Dockerfile"
+	assert_failure
+	assert_output --partial "Error: Number of args (2) should be greater or equal to 3"
+	refute_output --partial "[NotExist] Build"
+	refute_output --partial "[OldBuild] Build"
+	echo "# --- Should be greater or equalt to 3 arguments ---" >&3
+
+	test_files=( "$TMP_DIR/test.txt" "$TMP_DIR/re-test.txt" )
+	for _file in "${test_files[@]}"; do
+		echo "TEST" > "$_file"
+	done
+	echo "# --- Tmp dependency files created ---" >&3
+
+	run extended_conditional_docker_build "$TMP_TAG" "$TMP_DIR/Dockerfile" docker_build "${test_files[@]}"
+	assert_success
+	refute_output --partial "Error"
+	refute_output --partial "[NotExist] Build"
+	assert_output --partial "[OldBuild] Build (old: $TMP_DIR/test.txt $TMP_DIR/re-test.txt )"
+	echo "# --- Dependency test 1 ---" >&3
+
+	echo "NEW" > "$TMP_DIR/test.txt"
+
+	run extended_conditional_docker_build "$TMP_TAG" "$TMP_DIR/Dockerfile" docker_build "${test_files[@]}"
+	assert_success
+	refute_output --partial "Error"
+	refute_output --partial "[NotExist] Build"
+	assert_output --partial "[OldBuild] Build (old: $TMP_DIR/test.txt )"
+	echo "# --- Dependency test 2 ---" >&3
+
+}
