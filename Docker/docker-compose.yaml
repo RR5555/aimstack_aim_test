@@ -24,7 +24,12 @@ services:
       - "43800:43800"
     # Share .aim volume
     volumes:
-      - /tmp/aim_RR:/opt/aim
+      - type: bind
+        source: /tmp/aim_RR
+        target: /opt/aim
+        bind:
+          create_host_path: false # Do not create host directory (with root) if dir does not exist
+
     healthcheck:
       test: ["CMD", "curl", "-sSf", "http://127.0.0.1:43800"]
       interval: 10s

@@ -20,6 +20,19 @@ docker-server-build: ## [Host] Build aim server image & tag it
 
 
 aim-up: ## [Host] Aim Docker Compose up
+
+	@echo "### Check host aim dir (existence) ###"
+	@if [ ! -d /tmp/aim_RR ]; then\
+		mkdir /tmp/aim_RR ;\
+		echo -e "--- \e[2m/tmp/aim_RR\e[0m created ---";\
+	fi
+
+	@echo "### Check host aim dir (owner)###"
+	@if [ ! "$$(stat -c '%U' /tmp/aim_RR)" = "$$(id -un)" ]; then\
+		echo -e "\e[1;31mError:\e[0m Aim dir (\e[2m/tmp/aim_RR\e[0m) owner (\e[2m$$(stat -c '%U' /tmp/aim_RR)\e[0m) does not match current user (\e[2m$$(id -un)\e[0m)";\
+		exit 1;\
+	fi
+
 	@echo "### aim_server ###"
 	. ./fcts.sh && extended_conditional_docker_build aim_server ./Docker/server/Dockerfile docker_build ./supervisord.conf
 	
