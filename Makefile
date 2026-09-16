@@ -12,11 +12,10 @@ bats-tests: ## Launch tests
 
 
 docker-worker-build: ## [Host] Build aim worker image & tag it
-	. ./fcts.sh && docker_build aim_test_worker ./Docker/worker/Dockerfile
+	@. ./fcts.sh && docker_build aim_test_worker ./Docker/worker/Dockerfile
 
 docker-server-build: ## [Host] Build aim server image & tag it
-	. ./fcts.sh && docker_build aim_server ./Docker/server/Dockerfile
-
+	@. ./fcts.sh && docker_build aim_server ./Docker/server/Dockerfile
 
 
 aim-up: ## [Host] Aim Docker Compose up
@@ -33,16 +32,16 @@ aim-up: ## [Host] Aim Docker Compose up
 		exit 1;\
 	fi
 
-	@echo "### aim_server ###"
-	. ./fcts.sh && extended_conditional_docker_build aim_server ./Docker/server/Dockerfile docker_build ./supervisord.conf
+	@echo -e "### \e[2maim_server\e[0m ###"
+	@. ./fcts.sh && extended_conditional_docker_build aim_server ./Docker/server/Dockerfile docker_build ./supervisord.conf
 	
-	@echo "### aim_test_worker ###"
-	. ./fcts.sh && extended_conditional_docker_build aim_test_worker ./Docker/worker/Dockerfile docker_build ./Docker/worker/aim_runs.py ./Docker/worker/test_aim_runs.py
+	@echo -e "### \e[2maim_test_worker\e[0m ###"
+	@. ./fcts.sh && extended_conditional_docker_build aim_test_worker ./Docker/worker/Dockerfile docker_build ./Docker/worker/aim_runs.py ./Docker/worker/test_aim_runs.py
 
 	@echo "### Docker Compose ###"
 	@docker compose -f ./Docker/docker-compose.yaml up --detach
-	@echo "Head to http://127.0.0.1:43800"
-	@echo -e "Explore container logs:\ndocker compose -p aim_test logs"
+	@echo -e "Head to \e[4mhttp://127.0.0.1:43800\e[0m"
+	@echo -e "Explore container logs:\n\e[2mdocker compose -p aim_test logs\e[0m"
 
 
 # aim-up-build: ## [Host] Aim Docker Compose up with forced docker img build
@@ -58,7 +57,7 @@ aim-down: ## [Host] Aim Docker Compose down
 
 
 remote_check:
-	@echo "Go to http://127.0.0.1:43800"
+	@echo -e "Go to \e[4mhttp://127.0.0.1:43800\e[0m"
 
 ###### Help ######
 
