@@ -16,13 +16,11 @@ services:
         - DOCKER_USER=${DOCKER_USER}
         - DOCKER_USER_ID=${DOCKER_USER_ID}
         - DOCKER_USER_GID=${DOCKER_USER_GID}
-    # Share port for UI 43800
     expose:
-      - 43800
-      - 53800
+      - 43800 # UI
+      - 53800 # API
     ports:
       - "43800:43800"
-    # Share .aim volume
     volumes:
       - type: bind
         source: /tmp/aim_RR
